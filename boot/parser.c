@@ -81,6 +81,9 @@ static void command_parse(char* str)
     char* array[8] = {0};
     int i = 0, x = 0;
 
+    if (strlen(str) < 3) /* if user simply pressed enter, ignore */
+	return;
+
     str += 2; /* '] ' */
     i = util_parse(str, array, " ,", 8, '"');
 
@@ -107,6 +110,7 @@ static void safe_gets(char *mod, char *str, int maxlen)
 {
 	register char *lp;
 	register int c;
+	char *refmod = mod; /* make copy of mod so we don't backspace over it later */
 	char *strmax = str + maxlen - 1; /* allow space for trailing 0 */
 
 	lp = str;
@@ -130,7 +134,7 @@ static void safe_gets(char *mod, char *str, int maxlen)
 		case '\b':
 		case '#':
 		case '\177':
-		    if (lp > str) {
+		    if (lp > (str + strlen(refmod))) {
 			printf("\b \b");
 			lp--;
 		    }
