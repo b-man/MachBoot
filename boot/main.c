@@ -178,6 +178,9 @@ void machboot_main(struct atag *atags)
     if (!is_malloc_inited)
         panic("malloc not inited");
 
+    /* Initialize nvram */
+    nvram_init(gNvramDefaultVariables, 16);
+
     /* Delay boot. */
     delay_boot();
 

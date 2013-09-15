@@ -29,18 +29,10 @@
 
 #include "genboot.h"
 
-typedef struct _nvram_variable {
-    char name[64];
-    char setting[256];
-    int overridden;
-} nvram_variable_t;
-
-extern nvram_variable_t gNvramVariables[];
-
 #define xstr(s) #s
 #define str(s) xstr(s)
 
-nvram_variable_t gNvramVariables[] = {
+nvram_variable_t gNvramDefaultVariables[] = {
     {"build-style",         str(BUILD_STYLE), 0},
     {"build-version",       str(BUILD_TAG), 0},
     {"config_board",        str(BUILD_PLATFORM), 0},
@@ -60,51 +52,89 @@ nvram_variable_t gNvramVariables[] = {
     {"", "", 0xff},
 };
 
-int nvram_init(void)
-{
+struct nvram_variable_node {
+    char *name;
+    char *setting;
+    int overridden;
+    struct nvram_variable_node *nextvar;
+};
+
+typedef struct nvram_variable_node nvram_variable_node_t;
+
+nvram_variable_node_t *gNvramVariables;
+
+int nvram_init(nvram_variable_t *vars, size_t size) {
+    int step = 0;
+    nvram_variable_node_t *head = NULL;
+
+    while (step < size) {
+        nvram_variable_t *var = &vars[step];
+        gNvramVariables = (nvram_variable_node_t *)malloc(sizeof(nvram_variable_node_t));
+        gNvramVariables->name = var->name;
+        gNvramVariables->setting = var->setting;
+        gNvramVariables->overridden = var->overridden;
+        gNvramVariables->nextvar = head;
+        head = gNvramVariables;
+        step++;
+    }
+
+    gNvramVariables = head;
+
     return 0;
 }
 
-int nvram_set_variable(char* env, char* string) {
-    int i = 0;
-    char* p;
+size_t nvram_get_variable_list_size(void)
+{
+	size_t size = 0;
+	nvram_variable_node_t *var = gNvramVariables;
 
-    /* xxx */
-    while((p = strchr(string, '"')) != NULL)
-        *p = ' ';
-    
-    /* Set if in NvramVars. */
-    while(gNvramVariables[i].overridden != 0xff) {
-        if(strlen(env) > 64)
-            env[63] = '\0';
-        if(strncmp(env, gNvramVariables[i].name, 64) == 0) {
-            bzero(gNvramVariables[i].setting, 256);
-            strncpy(gNvramVariables[i].setting, string, 255);
-            gNvramVariables[i].overridden = 1;
+	while(var != NULL) {
+		size++;
+		var = var->nextvar;
+	}
+
+	return size;
+}
+
+int nvram_set_variable(const char *env, const char *setting) {
+    int step = 0;
+    nvram_variable_node_t *var = gNvramVariables;
+
+    while (step < nvram_get_variable_list_size()) {
+        if (strncmp(env, var->name, strlen(env)) == 0) {
+            bzero(var->setting, 255);
+            strncpy(var->setting, setting, 255);
+            var->overridden = 1;
             return 0;
         }
-        i++;
+
+        var = var->nextvar;
+        step++;
     }
-    
-    /* Todo, add the thing to a list if it's user specified, IE: platform-uuid */
+
+    nvram_variable_node_t *newvar = (nvram_variable_node_t *)malloc(sizeof(nvram_variable_node_t));
+    newvar->name = (char *)env;
+    newvar->setting = (char *)setting;
+    newvar->overridden = 0;
+    newvar->nextvar = gNvramVariables;
+    gNvramVariables = newvar;
+
     return 0;
 }
 
-char* nvram_get_variable(char* env) {
-    int i = 0;
- 
-    /* Set if in gNvramVars */
-    while(gNvramVariables[i].overridden != 0xff) {
-        if(strlen(env) > 64)
-            env[63] = '\0';
-        if(strncmp(env, gNvramVariables[i].name, strlen(env)) == 0) {
-            return gNvramVariables[i].setting;
-        }
-        i++;
+const char *nvram_get_variable(const char *env) {
+    int step = 0;
+    nvram_variable_node_t *var = gNvramVariables;
+
+    while (step < nvram_get_variable_list_size()) {
+        if (strncmp(env, var->name, strlen(env)) == 0)
+            return var->setting;
+
+        var = var->nextvar;
+        step++;
     }
-    
-    /* Todo, add the thing to a list if it's user specified, IE: platform-uuid */
-    return 0;
+
+    return NULL;
 }
 
 int command_setenv(int argc, char* argv[]) {
@@ -126,19 +156,19 @@ int command_getenv(int argc, char* argv[]) {
 }
 
 int command_printenv(int argc, char* argv[]) {
+    nvram_variable_node_t *vars = gNvramVariables;
+
     if(argv[1]) {
         if(nvram_get_variable(argv[1]))
             printf("%s = '%s'\n", argv[1], nvram_get_variable(argv[1]));
         return 0;
     } else {
-        // xxx todo, fix for other settings
-        int i = 0;
-        while(gNvramVariables[i].overridden != 0xff) {
-            printf("%s %s = '%s'\n", gNvramVariables[i].overridden ? "P" : "", gNvramVariables[i].name, gNvramVariables[i].setting);
-            i++;
+        while(vars != NULL) {
+            printf("%s %s = '%s'\n", vars->overridden ? "P" : "", vars->name, vars->setting);
+            vars = vars->nextvar;
         }
     }
-    
+
     return 0;
 }
 
