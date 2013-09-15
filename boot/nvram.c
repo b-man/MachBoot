@@ -112,6 +112,11 @@ int nvram_set_variable(const char *env, const char *setting) {
         step++;
     }
 
+#if 0
+    printf("DEBUG: gNvramVariables->name = %s\n", gNvramVariables->name);
+    printf("DEBUG: var->name = %s\n", var->name);
+
+    gNvramVariables = gNvramVariables->nextvar;
     nvram_variable_node_t *newvar = (nvram_variable_node_t *)malloc(sizeof(nvram_variable_node_t));
     newvar->name = (char *)env;
     newvar->setting = (char *)setting;
@@ -119,16 +124,20 @@ int nvram_set_variable(const char *env, const char *setting) {
     newvar->nextvar = gNvramVariables;
     gNvramVariables = newvar;
 
+    printf("DEBUG: gNvramVariables->name = %s\n", gNvramVariables->name);
+    printf("DEBUG: var->name = %s\n", var->name);
+#endif
+
     return 0;
 }
 
-const char *nvram_get_variable(const char *env) {
+char *nvram_get_variable(const char *env) {
     int step = 0;
     nvram_variable_node_t *var = gNvramVariables;
 
     while (step < nvram_get_variable_list_size()) {
         if (strncmp(env, var->name, strlen(env)) == 0)
-            return var->setting;
+            return (char *)var->setting;
 
         var = var->nextvar;
         step++;
@@ -147,21 +156,32 @@ int command_setenv(int argc, char* argv[]) {
 }
 
 int command_getenv(int argc, char* argv[]) {
+    char *value;
+
     if(argc != 1) {
         printf("usage: getenv <var>\n");
         return -1;
     }
-    printf("%s\n", nvram_get_variable(argv[1]));
-    return 0;
+    if ((value = nvram_get_variable(argv[1])) != NULL) {
+        printf("%s\n", value);
+        return 0;
+    } else {
+        printf("no such variable: %s\n", argv[1]);
+        return -1;
+    }
 }
 
 int command_printenv(int argc, char* argv[]) {
     nvram_variable_node_t *vars = gNvramVariables;
 
     if(argv[1]) {
-        if(nvram_get_variable(argv[1]))
+        if(nvram_get_variable(argv[1]) != NULL) {
             printf("%s = '%s'\n", argv[1], nvram_get_variable(argv[1]));
-        return 0;
+            return 0;
+        } else {
+            printf("no such variable: %s\n", argv[1]);
+            return -1;
+        }
     } else {
         while(vars != NULL) {
             printf("%s %s = '%s'\n", vars->overridden ? "P" : "", vars->name, vars->setting);

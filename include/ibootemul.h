@@ -77,7 +77,7 @@ extern void command_prompt(void);
 /* Nvram. */
 extern int nvram_init(nvram_variable_t *vars, size_t size);
 extern int nvram_set_variable(const char *env, const char *setting);
-extern const char *nvram_get_variable(const char *env);
+extern char *nvram_get_variable(const char *env);
 extern size_t nvram_get_variable_list_size(void);
 
 #endif
