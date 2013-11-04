@@ -106,10 +106,10 @@ so
   . = ((. + 0x1000) & ~(0x1000 - 1));
   __end = . ;
   _ttb_area = __base + 0x80000;
-/*
+
+
   .mach : { mach.o }
   .xmdt : { xmdt.o }
-*/  
 
   PROVIDE (__end = .);
 }

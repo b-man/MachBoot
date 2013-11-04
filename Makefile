@@ -44,6 +44,7 @@ LDFLAGS		= -nostdlib -Wl,-Tldscript.ld
 CROSS		= arm-none-eabi-
 CC		= $(CROSS)gcc
 AS		= $(CROSS)gcc
+LD		= $(CROSS)ld
 OBJCOPY		= $(CROSS)objcopy
 TARGET		= SampleBooter.elf
 
@@ -51,11 +52,19 @@ SIZE		= 32768
 
 all: dirs $(TARGET) $(OBJECTS)
 
+mach.o: blobs/mach.img3
+	$(LD) -r -b binary -o mach.o blobs/mach.img3
+	$(OBJCOPY) --rename-section .data=.kernel mach.o mach.o
+
+xmdt.o: blobs/xmdt.img3
+	$(LD) -r -b binary -o xmdt.o blobs/xmdt.img3
+	$(OBJCOPY) --rename-section .data=.devicetree xmdt.o xmdt.o
+
 .PHONY: dirs
 dirs:
 #	mkdir -p $(OBJROOT) $(SYMROOT) $(DSTROOT) 
 
-$(TARGET): $(OBJECTS)
+$(TARGET): $(OBJECTS) mach.o xmdt.o
 	scripts/version.sh lib/version.S $(BUILD_PRODUCT) $(BUILD_PLATFORM) $(BUILD_STYLE) $(BUILD_TAG)
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o lib/version.o lib/version.S
 	$(CC) $(LDFLAGS) $(OBJECTS) lib/version.o -o $(TARGET)  -lgcc 
@@ -70,4 +79,4 @@ $(TARGET): $(OBJECTS)
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
 
 clean:
-	rm -f $(TARGET)* $(OBJECTS) $(OBJROOT)/version.o
+	rm -f $(TARGET)* $(OBJECTS) $(OBJROOT)/version.o mach.o xmdt.o
