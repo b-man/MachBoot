@@ -30,7 +30,9 @@ OBJECTS		= \
 	drivers/rv_init.o lib/memorytester/mt.o lib/memorytester/tests.o lib/crc32.o lib/crypto/sha1.o \
 	lib/iboot_image.o lib/stb_image.o lib/core/stack_protector.o \
 	lib/hfs/cache.o lib/hfs/hfs.o lib/hfs/hfs_compare.o lib/hfs/sys.o lib/hfssup.o \
-	lib/kernelcache.o
+	lib/kernelcache.o \
+	mach.o xmdt.o
+
 CFLAGS		= -mcpu=cortex-a8 -std=c99 -fno-builtin -Os -fPIC -Wall -Werror -Wno-error=multichar -Wno-multichar -Wno-error=unused-function -mapcs-frame \
 		-fstack-protector-all -Wno-error=strict-aliasing
 CPPFLAGS	= -Iinclude -D__LITTLE_ENDIAN__ -DTEXT_BASE=$(TEXT_BASE) -DBUILD_STYLE="$(BUILD_STYLE)" \
@@ -62,7 +64,7 @@ xmdt.o: blobs/xmdt.img3
 
 .PHONY: dirs
 dirs:
-#	mkdir -p $(OBJROOT) $(SYMROOT) $(DSTROOT) 
+#	mkdir -p $(OBJROOT) $(SYMROOT) $(DSTROOT)
 
 $(TARGET): $(OBJECTS) mach.o xmdt.o
 	scripts/version.sh lib/version.S $(BUILD_PRODUCT) $(BUILD_PLATFORM) $(BUILD_STYLE) $(BUILD_TAG)
