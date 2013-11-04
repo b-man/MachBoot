@@ -51,15 +51,6 @@ typedef enum {
     PERM_CAN_DO_ANYTHING = 0x8000000
 } kPermissions;
 
-/* Nvram variable struct */
-typedef struct _nvram_variable {
-    char name[64];
-    char setting[256];
-    int overridden;
-} nvram_variable_t;
-
-extern nvram_variable_t gNvramDefaultVariables[];
-
 /* Permissions. */
 extern void permissions_init(void);
 extern bool permissions_check(uint32_t flag);
@@ -73,11 +64,5 @@ extern int command_bgcolor(int argc, char* argv[]);
 extern int command_halt(int argc, char* argv[]);
 extern int command_memorytest(int argc, char **argv);
 extern void command_prompt(void);
-
-/* Nvram. */
-extern int nvram_init(nvram_variable_t *vars, size_t size);
-extern int nvram_set_variable(const char *env, const char *setting);
-extern char *nvram_get_variable(const char *env);
-extern size_t nvram_get_variable_list_size(void);
 
 #endif

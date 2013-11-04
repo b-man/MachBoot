@@ -81,8 +81,8 @@ static void command_parse(char* str)
     char* array[8] = {0};
     int i = 0, x = 0;
 
-    if (strlen(str) < 3) /* if user simply pressed enter, ignore */
-	return;
+  if (strlen(str) < 3) /* if user simply pressed enter, ignore */
+	 return;
 
     str += 2; /* '] ' */
     i = util_parse(str, array, " ,", 8, '"');

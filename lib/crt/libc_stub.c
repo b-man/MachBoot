@@ -59,7 +59,6 @@ char *strcat(char *s1, const char *s2)
     return (strncat(s1, s2, strlen(s2)));
 }
 
-/*#if STRNCASECMP*/
 int strncasecmp(const char *s1, const char *s2, size_t len)
 {
     register int n = len;
@@ -68,8 +67,6 @@ int strncasecmp(const char *s1, const char *s2, size_t len)
             return (0);
     return (n < 0 ? 0 : tolower(*s1) - tolower(*--s2));
 }
-
-/*#endif*/
 
 int isupper(char c)
 {
@@ -325,6 +322,20 @@ register const char *delim;
         } while (sc != 0);
     }
     /* NOTREACHED */
+}
+
+char *strdup(const char *str)
+{
+    size_t len;
+    char *copy;
+
+    len = strlen(str) + 1;
+
+    if (!(copy = malloc(len)))
+        return NULL;
+
+    bcopy((void *)str, copy, len);
+    return copy;
 }
 
 void __assert(const char *filename, int linenumber, const char *assertion)

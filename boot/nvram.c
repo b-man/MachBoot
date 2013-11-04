@@ -32,6 +32,8 @@
 #define xstr(s) #s
 #define str(s) xstr(s)
 
+nvram_variable_list_t *gNvramVariables;
+
 nvram_variable_t gNvramDefaultVariables[] = {
     {"build-style",         str(BUILD_STYLE), 0},
     {"build-version",       str(BUILD_TAG), 0},
@@ -49,101 +51,171 @@ nvram_variable_t gNvramDefaultVariables[] = {
     {"framebuffer",         str(FRAMEBUFFER_ADDRESS), 0},
     {"secure-boot",         "0x0", 0},
     {"filesize", "0x0", 0},
-    {"", "", 0xff},
 };
 
-struct nvram_variable_node {
-    char *name;
-    char *setting;
-    int overridden;
-    struct nvram_variable_node *nextvar;
-};
+/**
+ * nvram_initialize_list 
+ *
+ * Initialize linked list to contain nvram variable data.
+ */
+nvram_variable_list_t *nvram_initialize_list(void)
+{
+        nvram_variable_list_t *list = malloc(sizeof(nvram_variable_list_t));
+        list->head = NULL;
+        list->tail = &list->head;
 
-typedef struct nvram_variable_node nvram_variable_node_t;
+        return list;
+}
 
-nvram_variable_node_t *gNvramVariables;
+/**
+ * nvram_init
+ *
+ * Populate nvram with initial values.
+ */
+int nvram_init(nvram_variable_t vars[], size_t size) {
+    int i;
 
-int nvram_init(nvram_variable_t *vars, size_t size) {
-    int step = 0;
-    nvram_variable_node_t *head = NULL;
+    gNvramVariables = nvram_initialize_list();
 
-    while (step < size) {
-        nvram_variable_t *var = &vars[step];
-        gNvramVariables = (nvram_variable_node_t *)malloc(sizeof(nvram_variable_node_t));
-        gNvramVariables->name = var->name;
-        gNvramVariables->setting = var->setting;
-        gNvramVariables->overridden = var->overridden;
-        gNvramVariables->nextvar = head;
-        head = gNvramVariables;
-        step++;
+    for (i = 0; i <= size; i++) {
+            nvram_variable_set(gNvramVariables, vars[i].name, vars[i].setting);
     }
-
-    gNvramVariables = head;
 
     return 0;
 }
 
-size_t nvram_get_variable_list_size(void)
+/**
+ * nvram_create_node
+ *
+ * Create a node to be inserted into linked list.
+ */
+nvram_variable_node_t *nvram_create_node(const char *name, const char *setting, int overridden)
 {
-	size_t size = 0;
-	nvram_variable_node_t *var = gNvramVariables;
+        nvram_variable_node_t *node = malloc(sizeof(nvram_variable_node_t));
 
-	while(var != NULL) {
-		size++;
-		var = var->nextvar;
-	}
+        node->next = NULL;
+        node->value.name = (char *)name;
+        node->value.setting = (char *)setting;
+        node->value.overridden = overridden;
 
-	return size;
+        return node;
 }
 
-int nvram_set_variable(const char *env, const char *setting) {
-    int step = 0;
-    nvram_variable_node_t *var = gNvramVariables;
+/**
+ * nvram_append_node
+ *
+ * Append a node to the end of the linked list.
+ */
+void nvram_append_node(nvram_variable_list_t *list, nvram_variable_node_t *node)
+{
+        *list->tail = node;
+        list->tail = &node->next;
+        node->next = NULL;
+}
 
-    while (step < nvram_get_variable_list_size()) {
-        if (strncmp(env, var->name, strlen(env)) == 0) {
-            bzero(var->setting, 255);
-            strncpy(var->setting, setting, 255);
-            var->overridden = 1;
-            return 0;
+/**
+ * nvram_remove_node
+ *
+ * Remove a node from the linked list.
+ */
+void nvram_remove_node(nvram_variable_list_t *list, nvram_variable_node_t *node)
+{
+        nvram_variable_node_t *current;
+        nvram_variable_node_t **next = &list->head;
+
+        while ((current = *next) != NULL) {
+                if (current == node) {
+                        *next = node->next;
+                        if (list->tail == &node->next)
+                                list->tail = next;
+
+                        node->next = NULL;
+                        break;
+                }
+                next = &current->next;
+        }
+}
+
+/**
+ * nvram_variable_set
+ *
+ * Add/override an vnram variable.
+ */
+void nvram_variable_set(nvram_variable_list_t *list, const char *name, const char *setting)
+{
+        nvram_variable_node_t *node;
+
+        nvram_variable_node_t *current = list->head;
+
+        while (current != NULL) {
+                if (strcmp(current->value.name, name) == 0) {
+                        current->value.name = strdup(name);
+                        current->value.setting = strdup(setting);
+                        current->value.overridden = 1;
+
+                        return;
+                }
+                current = current->next;
         }
 
-        var = var->nextvar;
-        step++;
-    }
-
-#if 0
-    printf("DEBUG: gNvramVariables->name = %s\n", gNvramVariables->name);
-    printf("DEBUG: var->name = %s\n", var->name);
-
-    gNvramVariables = gNvramVariables->nextvar;
-    nvram_variable_node_t *newvar = (nvram_variable_node_t *)malloc(sizeof(nvram_variable_node_t));
-    newvar->name = (char *)env;
-    newvar->setting = (char *)setting;
-    newvar->overridden = 0;
-    newvar->nextvar = gNvramVariables;
-    gNvramVariables = newvar;
-
-    printf("DEBUG: gNvramVariables->name = %s\n", gNvramVariables->name);
-    printf("DEBUG: var->name = %s\n", var->name);
-#endif
-
-    return 0;
+        node = nvram_create_node(name, setting, 0);
+        nvram_append_node(list, node);
 }
 
-char *nvram_get_variable(const char *env) {
-    int step = 0;
-    nvram_variable_node_t *var = gNvramVariables;
+/**
+ * nvram_variable_unset
+ *
+ * Unset/erase an nvram variable.
+ */
+int nvram_variable_unset(nvram_variable_list_t *list, const char *name)
+{
+        nvram_variable_node_t *current = list->head;
 
-    while (step < nvram_get_variable_list_size()) {
-        if (strncmp(env, var->name, strlen(env)) == 0)
-            return (char *)var->setting;
+        while (current != NULL) {
+                if (strcmp(current->value.name, name) == 0) {
+                        nvram_remove_node(list, current);
+                        return 0;
+                }
 
-        var = var->nextvar;
-        step++;
-    }
+                current = current->next;
+        }
 
-    return NULL;
+        return -1;
+}
+
+/**
+ * nvram_read_variable_info
+ *
+ * Retrieve information about an nvram variable (such as it's value or if it's been modified).
+ */
+nvram_variable_t nvram_read_variable_info(nvram_variable_list_t *list, const char *name)
+{
+        nvram_variable_t value;
+
+        nvram_variable_node_t *current = list->head;
+
+        while (current != NULL) {
+                if (strcmp(current->value.name, name) == 0)
+                    value = current->value;
+                current = current->next;
+        }
+
+        return value;
+}
+
+/**
+ * nvram_dump_list
+ *
+ * Dump a list of all variables in nvram and their associated values and states.
+ */
+void nvram_dump_list(nvram_variable_list_t *list)
+{
+        nvram_variable_node_t *current = list->head;
+
+        while (current != NULL) {
+                printf("%s %s = %s\n", (current->value.overridden ? "P" : ""), current->value.name, current->value.setting);
+                current = current->next;
+        }
 }
 
 int command_setenv(int argc, char* argv[]) {
@@ -151,19 +223,24 @@ int command_setenv(int argc, char* argv[]) {
         printf("usage: setenv <var> <string>\n");
         return -1;
     }
-    nvram_set_variable(argv[1], argv[2]);
+
+    nvram_variable_set(gNvramVariables, argv[1], argv[2]);
+
     return 0;
 }
 
 int command_getenv(int argc, char* argv[]) {
-    char *value;
+    nvram_variable_t var;
 
     if(argc != 1) {
         printf("usage: getenv <var>\n");
         return -1;
     }
-    if ((value = nvram_get_variable(argv[1])) != NULL) {
-        printf("%s\n", value);
+
+    var = nvram_read_variable_info(gNvramVariables, argv[1]);
+
+    if (var.name != NULL) {
+        printf("%s\n", var.setting);
         return 0;
     } else {
         printf("no such variable: %s\n", argv[1]);
@@ -172,23 +249,21 @@ int command_getenv(int argc, char* argv[]) {
 }
 
 int command_printenv(int argc, char* argv[]) {
-    nvram_variable_node_t *vars = gNvramVariables;
+    nvram_variable_t var;
+
+    var = nvram_read_variable_info(gNvramVariables, argv[1]);
 
     if(argv[1]) {
-        if(nvram_get_variable(argv[1]) != NULL) {
-            printf("%s = '%s'\n", argv[1], nvram_get_variable(argv[1]));
+        if (var.name != NULL) {
+            printf("%s = '%s'\n", var.name, var.setting);
             return 0;
         } else {
             printf("no such variable: %s\n", argv[1]);
             return -1;
         }
     } else {
-        while(vars != NULL) {
-            printf("%s %s = '%s'\n", vars->overridden ? "P" : "", vars->name, vars->setting);
-            vars = vars->nextvar;
-        }
+        nvram_dump_list(gNvramVariables);
     }
 
     return 0;
 }
-

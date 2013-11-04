@@ -52,6 +52,7 @@
 #include "bsd.h"
 #include "ibootemul.h"
 #include "sl.h"
+#include "nvram.h"
 
 #include <assert.h>
 

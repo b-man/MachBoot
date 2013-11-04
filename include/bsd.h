@@ -37,4 +37,8 @@ extern void memset_pattern4(void *b, const void *c4, size_t len);
 extern void memset_pattern8(void *b, const void *c8, size_t len);
 extern void memset_pattern16(void *b, const void *c16, size_t len);
 
+#if !defined(strdup)
+char *strdup(const char *str);
+#endif
+
 #endif

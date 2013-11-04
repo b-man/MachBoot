@@ -60,7 +60,7 @@ $(TARGET): $(OBJECTS)
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o lib/version.o lib/version.S
 	$(CC) $(LDFLAGS) $(OBJECTS) lib/version.o -o $(TARGET)  -lgcc 
 	$(OBJCOPY) -g -S -O binary $(TARGET) $(TARGET).raw
-#	mkimage -A arm -O linux -T kernel -C none -a $(TEXT_BASE) -e 0x80000040 -n "Linux 2.6" -d $(TARGET).raw $(TARGET).uImage
+	mkimage -A arm -O linux -T kernel -C none -a $(TEXT_BASE) -e $(TEXT_BASE) -n "$(BUILD_TAG)" -d $(TARGET).raw $(TARGET).uImage
 #	rm -f $(TARGET) $(TARGET).raw
 
 %.o: %.S

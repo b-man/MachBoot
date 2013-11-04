@@ -35,6 +35,8 @@ uint32_t ramdisk_size = 0x0;
 void* gFSLoadAddress = (void*)LOADADDR;
 UInt32 kLoadSize = 16777216;
 
+nvram_variable_list_t *gNvramVariables;
+
 /**
  * populate_memory_info
  *
@@ -108,7 +110,11 @@ extern const char *_bl_title, *_bl_build, *_bl_revision;
 static bool delay_boot(void)
 {
     uint32_t delay;
-    delay = strtoul(nvram_get_variable("bootdelay"), NULL, 0);
+    nvram_variable_t var;
+
+    var = nvram_read_variable_info(gNvramVariables, "bootdelay");
+
+    delay = strtoul(var.setting, NULL, 0);
     
     printf("Delaying boot for %d seconds. Hit enter to break into the command prompt.\n", delay);
 
@@ -179,7 +185,7 @@ void machboot_main(struct atag *atags)
         panic("malloc not inited");
 
     /* Initialize nvram */
-    nvram_init(gNvramDefaultVariables, 16);
+    nvram_init(gNvramDefaultVariables, 15);
 
     /* Delay boot. */
     delay_boot();
