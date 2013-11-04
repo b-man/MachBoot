@@ -29,6 +29,8 @@
 
 #include "genboot.h"
 
+nvram_variable_list_t *gNvramVariables;
+
 int command_help(int argc, char* argv[]) {
     command_dispatch_t *current = &gDispatch[0];
     while(current->name != NULL) {
@@ -348,6 +350,62 @@ int command_devicetree(int argc, char* argv[]) {
     return 0;
 }
 
+/* Set variables */
+int command_setenv(int argc, char* argv[]) {
+    if (argc == 0) {
+        printf("usage: setenv <var> <string>\n");
+        return -1;
+    }
+
+    if (argc == 1)
+        nvram_variable_unset(gNvramVariables, argv[1]);
+
+    if (argc == 2)
+        nvram_variable_set(gNvramVariables, argv[1], argv[2]);
+
+    return 0;
+}
+
+/* Read variables */
+int command_getenv(int argc, char* argv[]) {
+    nvram_variable_t var;
+
+    if(argc != 1) {
+        printf("usage: getenv <var>\n");
+        return -1;
+    }
+
+    var = nvram_read_variable_info(gNvramVariables, argv[1]);
+
+    if (strlen(var.name) > 0) {
+        printf("%s\n", var.setting);
+        return 0;
+    } else {
+        printf("no such variable: %s\n", argv[1]);
+        return -1;
+    }
+}
+
+/* Display all variables */
+int command_printenv(int argc, char* argv[]) {
+    nvram_variable_t var;
+
+    var = nvram_read_variable_info(gNvramVariables, argv[1]);
+
+    if(argv[1]) {
+        if (var.name != NULL) {
+            printf("%s = '%s'\n", var.name, var.setting);
+            return 0;
+        } else {
+            printf("no such variable: %s\n", argv[1]);
+            return -1;
+        }
+    } else {
+        nvram_dump_list(gNvramVariables);
+    }
+
+    return 0;
+}
 
 /* Command dispatch. */
 command_dispatch_t gDispatch[] = {

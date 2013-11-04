@@ -215,61 +215,7 @@ void nvram_dump_list(nvram_variable_list_t *list)
         nvram_variable_node_t *current = list->head;
 
         while (current != NULL) {
-                printf("%s %s = %s\n", (current->value.overridden ? "P" : ""), current->value.name, current->value.setting);
+                printf("%s %s = %s\n", (current->value.overridden ? "P" : " "), current->value.name, current->value.setting);
                 current = current->next;
         }
-}
-
-int command_setenv(int argc, char* argv[]) {
-    if (argc == 0) {
-        printf("usage: setenv <var> <string>\n");
-        return -1;
-    }
-
-    if (argc == 1)
-        nvram_variable_unset(gNvramVariables, argv[1]);
-
-    if (argc == 2)
-        nvram_variable_set(gNvramVariables, argv[1], argv[2]);
-
-    return 0;
-}
-
-int command_getenv(int argc, char* argv[]) {
-    nvram_variable_t var;
-
-    if(argc != 1) {
-        printf("usage: getenv <var>\n");
-        return -1;
-    }
-
-    var = nvram_read_variable_info(gNvramVariables, argv[1]);
-
-    if (strlen(var.name) > 0) {
-        printf("%s\n", var.setting);
-        return 0;
-    } else {
-        printf("no such variable: %s\n", argv[1]);
-        return -1;
-    }
-}
-
-int command_printenv(int argc, char* argv[]) {
-    nvram_variable_t var;
-
-    var = nvram_read_variable_info(gNvramVariables, argv[1]);
-
-    if(argv[1]) {
-        if (var.name != NULL) {
-            printf("%s = '%s'\n", var.name, var.setting);
-            return 0;
-        } else {
-            printf("no such variable: %s\n", argv[1]);
-            return -1;
-        }
-    } else {
-        nvram_dump_list(gNvramVariables);
-    }
-
-    return 0;
 }
