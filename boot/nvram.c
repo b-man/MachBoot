@@ -94,8 +94,8 @@ nvram_variable_node_t *nvram_create_node(const char *name, const char *setting, 
         nvram_variable_node_t *node = malloc(sizeof(nvram_variable_node_t));
 
         node->next = NULL;
-        node->value.name = (char *)name;
-        node->value.setting = (char *)setting;
+        node->value.name = strdup(name);
+        node->value.setting = strdup(setting);
         node->value.overridden = overridden;
 
         return node;
