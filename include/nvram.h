@@ -32,8 +32,8 @@
 
 /* NVRAM variable struct */
 typedef struct _nvram_variable {
-        char *name;
-        char *setting;
+        char name[64];
+        char setting[256];
         int overridden;
 } nvram_variable_t;
 
