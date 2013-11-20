@@ -1,17 +1,17 @@
 /*
  * Copyright 2013, Brian McKenzie. <mckenzba@gmail.com>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
- * 
+ *
  *   Redistributions of source code must retain the above copyright notice, this
  *   list of conditions and the following disclaimer.
- * 
+ *
  *   Redistributions in binary form must reproduce the above copyright notice, this
  *   list of conditions and the following disclaimer in the documentation and/or
  *   other materials provided with the distribution.
- * 
+ *
  *   If you are going to use this software in any form that does not involve
  *   releasing the source to this project or improving it, let me know beforehand.
  *
@@ -32,20 +32,20 @@
 
 /* NVRAM variable struct */
 typedef struct _nvram_variable {
-        char name[64];
-        char setting[256];
-        int overridden;
+    char name[64];
+    char setting[256];
+    int overridden;
 } nvram_variable_t;
 
 /* NVRAM variable node struct */
 typedef struct _nvram_variable_node {
-        struct _nvram_variable_node *next;
-        nvram_variable_t value;
+    struct _nvram_variable_node *next;
+    nvram_variable_t value;
 } nvram_variable_node_t;
 
 /* NVRAM variable list struct */
 typedef struct _nvram_variable_list {
-        nvram_variable_node_t *head, **tail;
+    nvram_variable_node_t *head, **tail;
 } nvram_variable_list_t;
 
 /* Initial NVRAM variable(s) (used for initialization) */

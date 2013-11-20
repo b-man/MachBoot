@@ -1,17 +1,18 @@
 /*
  * Copyright 2013, winocm. <winocm@icloud.com>
+ * Copyright 2013, Brian McKenzie <mckenzba@gmail.com>
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
- * 
+ *
  *   Redistributions of source code must retain the above copyright notice, this
  *   list of conditions and the following disclaimer.
- * 
+ *
  *   Redistributions in binary form must reproduce the above copyright notice, this
  *   list of conditions and the following disclaimer in the documentation and/or
  *   other materials provided with the distribution.
- * 
+ *
  *   If you are going to use this software in any form that does not involve
  *   releasing the source to this project or improving it, let me know beforehand.
  *
@@ -54,17 +55,17 @@ nvram_variable_t gNvramDefaultVariables[] = {
 };
 
 /**
- * nvram_initialize_list 
+ * nvram_initialize_list
  *
  * Initialize linked list to contain nvram variable data.
  */
 nvram_variable_list_t *nvram_initialize_list(void)
 {
-        nvram_variable_list_t *list = malloc(sizeof(nvram_variable_list_t));
-        list->head = NULL;
-        list->tail = &list->head;
+    nvram_variable_list_t *list = malloc(sizeof(nvram_variable_list_t));
+    list->head = NULL;
+    list->tail = &list->head;
 
-        return list;
+    return list;
 }
 
 /**
@@ -78,7 +79,7 @@ int nvram_init(nvram_variable_t vars[], size_t size) {
     gNvramVariables = nvram_initialize_list();
 
     for (i = 0; i <= size; i++) {
-            nvram_variable_set(gNvramVariables, vars[i].name, vars[i].setting);
+        nvram_variable_set(gNvramVariables, vars[i].name, vars[i].setting);
     }
 
     return 0;
@@ -91,14 +92,14 @@ int nvram_init(nvram_variable_t vars[], size_t size) {
  */
 nvram_variable_node_t *nvram_create_node(const char *name, const char *setting, int overridden)
 {
-        nvram_variable_node_t *node = malloc(sizeof(nvram_variable_node_t));
+    nvram_variable_node_t *node = malloc(sizeof(nvram_variable_node_t));
 
-        node->next = NULL;
-        strncpy(node->value.name, name, 63);
-        strncpy(node->value.setting, setting, 255);
-        node->value.overridden = overridden;
+    node->next = NULL;
+    strncpy(node->value.name, name, 63);
+    strncpy(node->value.setting, setting, 255);
+    node->value.overridden = overridden;
 
-        return node;
+    return node;
 }
 
 /**
@@ -108,9 +109,9 @@ nvram_variable_node_t *nvram_create_node(const char *name, const char *setting, 
  */
 void nvram_append_node(nvram_variable_list_t *list, nvram_variable_node_t *node)
 {
-        *list->tail = node;
-        list->tail = &node->next;
-        node->next = NULL;
+    *list->tail = node;
+    list->tail = &node->next;
+    node->next = NULL;
 }
 
 /**
@@ -120,20 +121,21 @@ void nvram_append_node(nvram_variable_list_t *list, nvram_variable_node_t *node)
  */
 void nvram_remove_node(nvram_variable_list_t *list, nvram_variable_node_t *node)
 {
-        nvram_variable_node_t *current;
-        nvram_variable_node_t **next = &list->head;
+    nvram_variable_node_t *current;
+    nvram_variable_node_t **next = &list->head;
 
-        while ((current = *next) != NULL) {
-                if (current == node) {
-                        *next = node->next;
-                        if (list->tail == &node->next)
-                                list->tail = next;
+    while ((current = *next) != NULL) {
+        if (current == node) {
+            *next = node->next;
 
-                        node->next = NULL;
-                        break;
-                }
-                next = &current->next;
+            if (list->tail == &node->next)
+                list->tail = next;
+
+            node->next = NULL;
+            break;
         }
+        next = &current->next;
+    }
 }
 
 /**
@@ -143,25 +145,25 @@ void nvram_remove_node(nvram_variable_list_t *list, nvram_variable_node_t *node)
  */
 void nvram_variable_set(nvram_variable_list_t *list, const char *name, const char *setting)
 {
-        nvram_variable_node_t *node;
+    nvram_variable_node_t *node;
 
-        nvram_variable_node_t *current = list->head;
+    nvram_variable_node_t *current = list->head;
 
-        while (current != NULL) {
-                if (strcmp(current->value.name, name) == 0) {
-                        bzero(current->value.name, 63);
-                        bzero(current->value.setting, 255);
-                        strncpy(current->value.name, name, 63);
-                        strncpy(current->value.setting, setting, 255);
-                        current->value.overridden = 1;
+    while (current != NULL) {
+        if (strcmp(current->value.name, name) == 0) {
+            bzero(current->value.name, 63);
+            bzero(current->value.setting, 255);
+            strncpy(current->value.name, name, 63);
+            strncpy(current->value.setting, setting, 255);
+            current->value.overridden = 1;
 
-                        return;
-                }
-                current = current->next;
+            return;
         }
+        current = current->next;
+    }
 
-        node = nvram_create_node(name, setting, 0);
-        nvram_append_node(list, node);
+    node = nvram_create_node(name, setting, 0);
+    nvram_append_node(list, node);
 }
 
 /**
@@ -171,18 +173,18 @@ void nvram_variable_set(nvram_variable_list_t *list, const char *name, const cha
  */
 int nvram_variable_unset(nvram_variable_list_t *list, const char *name)
 {
-        nvram_variable_node_t *current = list->head;
+    nvram_variable_node_t *current = list->head;
 
-        while (current != NULL) {
-                if (strcmp(current->value.name, name) == 0) {
-                        nvram_remove_node(list, current);
-                        return 0;
-                }
-
-                current = current->next;
+    while (current != NULL) {
+        if (strcmp(current->value.name, name) == 0) {
+            nvram_remove_node(list, current);
+            return 0;
         }
 
-        return -1;
+        current = current->next;
+    }
+
+    return -1;
 }
 
 /**
@@ -192,17 +194,18 @@ int nvram_variable_unset(nvram_variable_list_t *list, const char *name)
  */
 nvram_variable_t nvram_read_variable_info(nvram_variable_list_t *list, const char *name)
 {
-        nvram_variable_t value;
+    nvram_variable_t value;
 
-        nvram_variable_node_t *current = list->head;
+    nvram_variable_node_t *current = list->head;
 
-        while (current != NULL) {
-                if (strcmp(current->value.name, name) == 0)
-                    value = current->value;
-                current = current->next;
-        }
+    while (current != NULL) {
+        if (strcmp(current->value.name, name) == 0)
+            value = current->value;
 
-        return value;
+        current = current->next;
+    }
+
+    return value;
 }
 
 /**
@@ -212,10 +215,10 @@ nvram_variable_t nvram_read_variable_info(nvram_variable_list_t *list, const cha
  */
 void nvram_dump_list(nvram_variable_list_t *list)
 {
-        nvram_variable_node_t *current = list->head;
+    nvram_variable_node_t *current = list->head;
 
-        while (current != NULL) {
-                printf("%s %s = %s\n", (current->value.overridden ? "P" : " "), current->value.name, current->value.setting);
-                current = current->next;
-        }
+    while (current != NULL) {
+        printf("%s %s = %s\n", (current->value.overridden ? "P" : " "), current->value.name, current->value.setting);
+        current = current->next;
+    }
 }
